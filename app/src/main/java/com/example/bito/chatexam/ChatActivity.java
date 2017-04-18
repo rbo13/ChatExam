@@ -1,12 +1,20 @@
 package com.example.bito.chatexam;
 
+import android.app.ProgressDialog;
 import android.content.Intent;
+import android.graphics.Color;
+import android.os.Handler;
+import android.support.design.widget.Snackbar;
+import android.support.v4.widget.ContentLoadingProgressBar;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ListView;
+import android.widget.ProgressBar;
+import android.widget.RelativeLayout;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import com.firebase.ui.database.FirebaseListAdapter;
@@ -20,6 +28,8 @@ public class ChatActivity extends AppCompatActivity {
     private String loggedInUsername = "";
     private Button btnSubmit;
     private Button btnLogout;
+    private RelativeLayout relativeLayout;
+    private ProgressDialog progressDialog;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -30,6 +40,7 @@ public class ChatActivity extends AppCompatActivity {
         listView = (ListView) findViewById(R.id.list);
         btnSubmit = (Button) findViewById(R.id.buttonSend);
         btnLogout = (Button) findViewById(R.id.btnLogout);
+        relativeLayout = (RelativeLayout) findViewById(R.id.activity_chat);
 
         if(FirebaseAuth.getInstance().getCurrentUser() == null) {
             showLoginView();
@@ -43,7 +54,7 @@ public class ChatActivity extends AppCompatActivity {
             public void onClick(View v) {
 
                 if(input.getText().toString().trim().equals("")){
-                    Toast.makeText(ChatActivity.this, "Must not be empty!", Toast.LENGTH_SHORT).show();
+                    displaySnackbar("Message must not be empty!");
                 } else {
                     FirebaseDatabase.getInstance()
                             .getReference()
@@ -72,6 +83,8 @@ public class ChatActivity extends AppCompatActivity {
     private void showAllOldMessages() {
         loggedInUsername = FirebaseAuth.getInstance().getCurrentUser().getUid();
 
+        showLoader();
+
         adapter = new MessageAdapter(this, ChatMessage.class, R.layout.item_in_message,
                 FirebaseDatabase.getInstance().getReference());
         listView.setAdapter(adapter);
@@ -86,6 +99,33 @@ public class ChatActivity extends AppCompatActivity {
         intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
         intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TASK);
         startActivity(intent);
+    }
+
+    private void displaySnackbar(String message) {
+        Snackbar snackbar = Snackbar.make(relativeLayout, message, Snackbar.LENGTH_LONG);
+        View snackbarView = snackbar.getView();
+        TextView textView = (TextView) snackbarView.findViewById(android.support.design.R.id.snackbar_text);
+        textView.setTextColor(Color.RED);
+        snackbar.show();
+    }
+
+    private void showLoader() {
+        progressDialog = new ProgressDialog(this);
+        progressDialog.setMessage("Retrieving data...");
+        progressDialog.setProgressStyle(ProgressDialog.STYLE_SPINNER);
+        progressDialog.setIndeterminate(false);
+        progressDialog.show();
+
+        // Close ProgressDialog after 5secs.
+        Runnable progressRunnable = new Runnable() {
+            @Override
+            public void run() {
+                progressDialog.cancel();
+            }
+        };
+        Handler pdCanceller = new Handler();
+        pdCanceller.postDelayed(progressRunnable, 5000);
+
     }
 
 }

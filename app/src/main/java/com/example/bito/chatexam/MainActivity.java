@@ -1,12 +1,18 @@
 package com.example.bito.chatexam;
 
+import android.app.ProgressDialog;
 import android.content.Intent;
+import android.graphics.Color;
 import android.support.annotation.NonNull;
+import android.support.design.widget.Snackbar;
+import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.RelativeLayout;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import com.google.android.gms.tasks.OnCompleteListener;
@@ -20,6 +26,9 @@ public class MainActivity extends AppCompatActivity {
     private EditText passwordField;
     private Button btnLogin;
     private FirebaseAuth mFirebaseAuth;
+    private RelativeLayout relativeLayout;
+
+    private ProgressDialog progressDialog;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -29,6 +38,7 @@ public class MainActivity extends AppCompatActivity {
         emailField = (EditText) findViewById(R.id.emailEditId);
         passwordField = (EditText) findViewById(R.id.passwordEditId);
         btnLogin = (Button) findViewById(R.id.submit);
+        relativeLayout = (RelativeLayout) findViewById(R.id.activity_main);
         mFirebaseAuth = FirebaseAuth.getInstance();
 
         if(mFirebaseAuth.getCurrentUser() != null) {
@@ -44,8 +54,9 @@ public class MainActivity extends AppCompatActivity {
                 final String password = passwordField.getText().toString().trim();
 
                 if(email.isEmpty() && password.isEmpty()) {
-                    Toast.makeText(MainActivity.this, "Fields must not be empty!", Toast.LENGTH_SHORT).show();
+                    displaySnackbar("Fields must not be empty!");
                 } else {
+                    showDialog();
                     // Proceed to authentication
                     mFirebaseAuth.signInWithEmailAndPassword(email, password)
                             .addOnCompleteListener(MainActivity.this, new OnCompleteListener<AuthResult>() {
@@ -75,7 +86,7 @@ public class MainActivity extends AppCompatActivity {
                         if(task.isSuccessful()) {
                             loadChatView();
                         }else {
-                            Toast.makeText(MainActivity.this, "Something went wrong!", Toast.LENGTH_SHORT).show();
+                            displaySnackbar("Something went wrong!");
                         }
                     }
                 });
@@ -87,5 +98,21 @@ public class MainActivity extends AppCompatActivity {
         intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
         intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TASK);
         startActivity(intent);
+    }
+
+    private void displaySnackbar(String message) {
+        Snackbar snackbar = Snackbar.make(relativeLayout, message, Snackbar.LENGTH_LONG);
+        View snackbarView = snackbar.getView();
+        TextView textView = (TextView) snackbarView.findViewById(android.support.design.R.id.snackbar_text);
+        textView.setTextColor(Color.RED);
+        snackbar.show();
+    }
+
+    private void showDialog() {
+        progressDialog = new ProgressDialog(this);
+        progressDialog.setMessage("Logging in, please wait...");
+        progressDialog.setProgressStyle(ProgressDialog.STYLE_SPINNER);
+        progressDialog.setIndeterminate(false);
+        progressDialog.show();
     }
 }
